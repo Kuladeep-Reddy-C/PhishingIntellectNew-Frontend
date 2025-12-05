@@ -56,6 +56,58 @@ function DetectPage() {
     setScanning(true);
     setResult({ status: null, message: "" });
 
+    if (selectedScan === "url") {
+      if (!inputValue.trim()) {
+        setScanning(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/api/url", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url: inputValue.trim() }),
+        });
+
+        const data = await res.json();
+        console.log("URL scan result:", data);
+
+        if (data.error) {
+          setResult({
+            status: "error",
+            message: data.error || data.message || "Error scanning URL",
+          });
+        } else if (data.decision === "PHISHED") {
+          setResult({
+            status: "threat",
+            message: data.message,
+          });
+        } else if (data.decision === "LEGITIMATE") {
+          setResult({
+            status: "safe",
+            message: data.message,
+          });
+        } else {
+          setResult({
+            status: "safe",
+            message: data.message || "No strong evidence of phishing.",
+          });
+        }
+      } catch (err) {
+        console.error("URL scan error:", err);
+        setResult({
+          status: "error",
+          message: "Network or server error while scanning URL.",
+        });
+      } finally {
+        setScanning(false);
+      }
+
+      return;
+    }
+
     // ===========================
     // 🖼️ IMAGE UPLOAD LOGIC HERE
     // ===========================
